@@ -1,6 +1,8 @@
 {
   "scripts": {
-    "build": "tsc -b && npx prisma generate",
+    "build": "tsc -b",
+    "prisma:generate": "prisma generate --schema=./prisma/schema.prisma",
+    "postinstall": "prisma generate --schema=./prisma/schema.prisma",
     "start": "node dist/server.js",
     "dev": "nodemon src/server.ts",
     "watch": "tsc -w"
