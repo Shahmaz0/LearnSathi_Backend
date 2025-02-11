@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "build": "tsc -b",
+    "build": "tsc -b && npx prisma generate",
     "start": "node dist/server.js",
     "dev": "nodemon src/server.ts",
     "watch": "tsc -w"
