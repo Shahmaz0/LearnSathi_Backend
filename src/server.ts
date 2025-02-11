@@ -2,6 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import userAuthRoutes from "./routes/userAuth";
 import tutorAuthRoutes from "./routes/tutorAuth"
+import allTutors from "./routes/tutors"
 
 dotenv.config();
 
@@ -13,6 +14,7 @@ app.use("/userAuth", userAuthRoutes);
 
 // Tutor Auth Routes
 app.use("/tutorAuth", tutorAuthRoutes);
+app.use("/tutor", allTutors);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
