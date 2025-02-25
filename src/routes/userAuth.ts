@@ -12,8 +12,7 @@ const SECRET_KEY = process.env.JWT_SECRET || "s3cret";
 // Signup Route
 router.post("/signup", async (req: Request, res: Response) => {
     try {
-        const { email, password } = req.body;
-        
+        const { firstName, lastName, standard, email, password } = req.body;
         if (!email || !password) {
             return res.status(400).json({ msg: "All fields are required" });
         }
@@ -25,7 +24,7 @@ router.post("/signup", async (req: Request, res: Response) => {
         const hashedPassword = await bcrypt.hash(password, 10);
 
         await prisma.user.create({
-            data: { email, password: hashedPassword },
+            data: { firstName, lastName, standard, email, password: hashedPassword },
         });
 
         res.json({ msg: "User has been created successfully" });
@@ -56,5 +55,40 @@ router.post("/signin", async (req: Request, res: Response) => {
         res.status(500).json({ msg: "Internal Server Error", error: error instanceof Error ? error.message : String(error) });
     }
 });
+
+router.put("/user/:id", async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { firstName, lastName, standard, email, password } = req.body;
+
+        // Check if the user exists
+        const user = await prisma.user.findUnique({ where: { id: id } });
+        if (!user) {
+            return res.status(404).json({ msg: "User not found" });
+        }
+        // Hash the new password if provided
+        let hashedPassword = user.password;
+        if (password) {
+            hashedPassword = await bcrypt.hash(password, 10);
+        }
+
+        // Update the user details
+        const updatedUser = await prisma.user.update({
+            where: { id: id },
+            data: {
+                firstName: firstName || user.firstName,
+                lastName: lastName || user.lastName,
+                standard: standard || user.standard,
+                email: email || user.email,
+                password: hashedPassword,
+            },
+        });
+
+        res.json({ msg: "User details updated successfully", user: updatedUser });
+    } catch (error) {
+        res.status(500).json({ msg: "Internal Server Error", error: error instanceof Error ? error.message : String(error) });
+    }
+});
+
 
 export default router;
