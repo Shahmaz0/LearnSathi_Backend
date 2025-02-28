@@ -7,69 +7,16 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const router = Router();
-const SECRET_KEY = process.env.JWT_SECRET || "s3cret";
-
-// Signup Route
-router.post("/signup", async (req: Request, res: Response) => {
-    try {
-        const { firstName, lastName, standard, email, password } = req.body;
-        if (!email || !password) {
-            return res.status(400).json({ msg: "All fields are required" });
-        }
-        const existingUser = await prisma.user.findUnique({ where: { email } });
-
-        if (existingUser) {
-            return res.status(400).json({ msg: "User already exists" });
-        }
-        const hashedPassword = await bcrypt.hash(password, 10);
-
-        await prisma.user.create({
-            data: { firstName, lastName, standard, email, password: hashedPassword },
-        });
-
-        res.json({ msg: "User has been created successfully" });
-    } catch (error) {
-        res.status(500).json({ msg: "Internal Server Error", error: error instanceof Error ? error.message : String(error) });
-    }
-});
-
-// Signin Route
-router.post("/signin", async (req: Request, res: Response) => {
-    try {
-        const { email, password } = req.body;
-
-        if (!email || !password) {
-            return res.status(400).json({ msg: "All fields are required" });
-        }
-        const user = await prisma.user.findUnique({ where: { email } });
-        if (!user) {
-            return res.status(400).json({ msg: "Invalid email or password" });
-        }
-        const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) {
-            return res.status(400).json({ msg: "Invalid email or password" });
-        }
-        const token = jwt.sign({ userId: user.id, email: user.email }, SECRET_KEY, { expiresIn: "1h" });
-        res.json({ msg: "Signin successful", token });
-    } catch (error) {
-        res.status(500).json({ msg: "Internal Server Error", error: error instanceof Error ? error.message : String(error) });
-    }
-});
 
 router.put("/user/:id", async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const { firstName, lastName, standard, email, password } = req.body;
+        const { firstName, lastName, standard, email } = req.body;
 
         // Check if the user exists
         const user = await prisma.user.findUnique({ where: { id: id } });
         if (!user) {
             return res.status(404).json({ msg: "User not found" });
-        }
-        // Hash the new password if provided
-        let hashedPassword = user.password;
-        if (password) {
-            hashedPassword = await bcrypt.hash(password, 10);
         }
 
         // Update the user details
@@ -79,8 +26,7 @@ router.put("/user/:id", async (req: Request, res: Response) => {
                 firstName: firstName || user.firstName,
                 lastName: lastName || user.lastName,
                 standard: standard || user.standard,
-                email: email || user.email,
-                password: hashedPassword,
+                email: email || user.email
             },
         });
 
@@ -90,5 +36,52 @@ router.put("/user/:id", async (req: Request, res: Response) => {
     }
 });
 
+//Save the user in supabase database
+router.post("/save-user", async (req: Request, res: Response) => {
+    try {
+        console.log("Request Body:", req.body); 
+        const { supabaseUserId, firstName, lastName, phoneNumber, standard, email, profileImage } = req.body;
 
+        if (!supabaseUserId || !email) {
+            return res.status(400).json({ msg: "All fields are required" });
+        }
+
+        const existingUser = await prisma.user.findUnique({ where: { supabaseUserId } });
+
+        if (existingUser) {
+            return res.status(400).json({ msg: "User already exists" });
+        }
+
+        const newUser = await prisma.user.create({
+            data: { supabaseUserId, firstName, lastName, phoneNumber, standard, email, profileImage }, 
+        });
+
+        res.json({ msg: "User data saved successfully", user: newUser });
+    } catch (error) {
+        console.error("Error saving user:", error); // Log the error
+        res.status(500).json({ msg: "Internal Server Error", error: error instanceof Error ? error.message : String(error) });
+    }
+});
+
+
+// get User for a perticular supabase user id
+router.get("/get-user", async (req: Request, res: Response) => {
+    try {
+        const { supabaseUserId } = req.query;
+
+        if (!supabaseUserId) {
+            return res.status(400).json({ msg: "User ID is required" });
+        }
+
+        const user = await prisma.user.findUnique({ where: { supabaseUserId: supabaseUserId as string } });
+
+        if (!user) {
+            return res.status(404).json({ msg: "User not found" });
+        }
+
+        res.json({ user });
+    } catch (error) {
+        res.status(500).json({ msg: "Internal Server Error", error: error instanceof Error ? error.message : String(error) });
+    }
+});
 export default router;
