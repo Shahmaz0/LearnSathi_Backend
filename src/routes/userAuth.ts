@@ -11,12 +11,17 @@ const router = Router();
 router.put("/user/:id", async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const { firstName, lastName, standard, email } = req.body;
+        const { supabaseUserId, firstName, lastName, standard, email, phoneNumber, profileImage } = req.body;
 
         // Check if the user exists
         const user = await prisma.user.findUnique({ where: { id: id } });
         if (!user) {
             return res.status(404).json({ msg: "User not found" });
+        }
+
+        // Verify that the supabaseUserId matches the logged-in user
+        if (user.supabaseUserId !== supabaseUserId) {
+            return res.status(403).json({ msg: "Unauthorized: You can only update your own profile" });
         }
 
         // Update the user details
@@ -26,7 +31,9 @@ router.put("/user/:id", async (req: Request, res: Response) => {
                 firstName: firstName || user.firstName,
                 lastName: lastName || user.lastName,
                 standard: standard || user.standard,
-                email: email || user.email
+                email: email || user.email,
+                phoneNumber: phoneNumber || user.phoneNumber,
+                profileImage: profileImage || user.profileImage
             },
         });
 
