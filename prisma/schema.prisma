@@ -41,6 +41,19 @@ model Tutor {
   ratings Float
 }
 
+model BookingRequest {
+    id          String   @id @default(uuid())
+    tutorId     String
+    userId      String
+    subject     String
+    requestType String
+    status      String   @default("Pending")
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+
+    @@map("requests") // Optional: Custom table name
+}
+
 enum Gender {
   Male
   Female
