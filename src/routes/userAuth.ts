@@ -10,6 +10,7 @@ router.put("/user/:id", async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
         const { supabaseUserId, firstName, lastName, standard, email, phoneNumber, profileImage } = req.body;
+        console.log(req.body);
 
         // Check if the user exists
         const user = await prisma.user.findUnique({ where: { id: id } });
